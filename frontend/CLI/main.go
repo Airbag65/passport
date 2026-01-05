@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -8,20 +9,26 @@ import (
 )
 
 func main() {
+	defer func(){
+		if r := recover(); r != nil {
+
+		}
+	}()
 	p, err := InitParser()
 	if err != nil {
 		log.Fatal(err)
 	}
 	command, err := p.Parse(os.Args)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("Invalid usage.\nUsage: passport <command>\nRun 'passport help' for a list of commands and their usage")
+		panic("error")
 	}
 	c := CreateCommand(command)
 	c.Execute()
 }
 
-func InitParser() (*argparse.Parser, error){
-	commands := []string{"status", "login", "signout", "signup", "add", "get", "list", "ls", "remove", "rm"}
+func InitParser() (*argparse.Parser, error) {
+	commands := []string{"status", "login", "signout", "signup", "add", "get", "list", "ls", "remove", "rm", "help"}
 
 	p := argparse.New()
 	hostDesc := "Specify which host to direct the command at"
