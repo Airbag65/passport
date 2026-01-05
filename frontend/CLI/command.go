@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"os"
 	"passport-cli/net"
+	"syscall"
 	"text/tabwriter"
 
 	"github.com/Airbag65/argparse"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 func CreateCommand(pc *argparse.ParsedCommand) Command {
@@ -49,7 +51,16 @@ func (c *StatusCommand) Execute() error {
 }
 
 func (c *LoginCommand) Execute() error {
-	fmt.Printf("%+v\n", c)
+	var email string
+	fmt.Print("Email: ")
+	fmt.Scan(&email)
+	fmt.Print("Password: ")
+	passBytes, err := terminal.ReadPassword(int(syscall.Stdin))
+	if err != nil {
+		return err
+	}
+	fmt.Printf("\n%s\n", email)
+	fmt.Println(string(passBytes))
 	return nil
 }
 

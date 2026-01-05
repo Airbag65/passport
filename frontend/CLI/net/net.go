@@ -5,7 +5,9 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"passport-cli/enc"
 )
 
 
@@ -61,3 +63,71 @@ func ValidTokenExists() bool {
 	return true
 }
 
+type LoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type LoginResponse struct {
+	ResponseCode    int    `json:"response_code"`
+	ResponseMessage string `json:"response_message"`
+	AuthToken       string `json:"auth_token"`
+	Name            string `json:"name"`
+	Surname         string `json:"surname"`
+	Email           string `json:"email"`
+	PemString       string `json:"pem_string"`
+}
+
+func Login(email, password string) (*LoginResponse, error) {
+	if email == "" || password == "" {
+		return nil, fmt.Errorf("No email or password provided\n")
+	}
+	loginRequestBody := LoginRequest{
+		Email:    email,
+		Password: password,
+	}
+
+	requestBodyBytes, err := json.Marshal(loginRequestBody)
+	if err != nil {
+		return nil, err
+	}
+
+	request, err := http.NewRequest("POST", "https://localhost:443/auth/login", bytes.NewBuffer(requestBodyBytes))
+	if err != nil {
+		return nil, err
+	}
+
+	request.Header.Set("Content-Type", "application/json")
+
+	response, err := Client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	var buffer []byte
+	if response.StatusCode == 200 {
+		buffer, err = io.ReadAll(response.Body)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, fmt.Errorf("StatusCode was not 200, but was %d", response.StatusCode)
+	}
+
+	var loginRes LoginResponse
+
+	if err = json.Unmarshal(buffer, &loginRes); err != nil {
+		return nil, err
+	}
+
+	if err = enc.StringToPEMFile(loginRes.PemString); err != nil {
+		return nil, err
+	}
+
+	err = AddLocalAuthToken(loginRes.AuthToken, loginRes.Name, loginRes.Surname, loginRes.Email)
+	if err != nil {
+		return nil, err
+	}
+
+	return &loginRes, nil
+}

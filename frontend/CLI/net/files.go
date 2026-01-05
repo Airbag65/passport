@@ -54,3 +54,24 @@ func RemoveLocalAuthToken() error {
 	os.WriteFile(path, bytesToWrite, 0644)
 	return nil
 }
+
+func AddLocalAuthToken(authToken, name, surname, email string) error {
+	bytesToWrite, err := json.Marshal(UserInformation{
+		AuthToken: authToken,
+		Name: name,
+		Surname: surname,
+		Email: email,
+	})
+	if err != nil {
+		return err
+	}
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+
+	path := filepath.Join(homeDir, ".passport/authentication.json")
+	os.WriteFile(path, bytesToWrite, 0644)
+	return nil
+}
