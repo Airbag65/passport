@@ -105,13 +105,15 @@ func Login(email, password string) (*LoginResponse, error) {
 	}
 
 	var buffer []byte
-	if response.StatusCode == 200 {
-		buffer, err = io.ReadAll(response.Body)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		return nil, fmt.Errorf("StatusCode was not 200, but was %d", response.StatusCode)
+	if response.StatusCode != 200 {
+		return &LoginResponse{
+			ResponseCode: response.StatusCode,
+		}, nil
+	}
+
+	buffer, err = io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
 	}
 
 	var loginRes LoginResponse

@@ -56,11 +56,25 @@ func (c *LoginCommand) Execute() error {
 	fmt.Scan(&email)
 	fmt.Print("Password: ")
 	passBytes, err := terminal.ReadPassword(int(syscall.Stdin))
+	fmt.Println()
 	if err != nil {
 		return err
 	}
-	fmt.Printf("\n%s\n", email)
-	fmt.Println(string(passBytes))
+	res, err := net.Login(email, string(passBytes))
+	if err != nil {
+		red.Printf("Something went wrong! err: %v\n", err)
+		return err
+	}
+	switch res.ResponseCode {
+	case 200:
+		green.Printf("You are now logged in as '%s %s'\n", res.Name, res.Surname)
+	case 404:
+		yellow.Printf("Account with email '%s' does not exist\n", email)
+	case 418:
+		yellow.Printf("Already logged in with email '%s'\n", email)
+	case 401:
+		red.Println("Incorrect password")
+	}
 	return nil
 }
 

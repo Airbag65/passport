@@ -33,4 +33,5 @@ type RemoveCommand struct {
 var (
 	red = color.New(color.FgRed)
 	green = color.New(color.FgGreen)
+	yellow = color.New(color.FgYellow)
 )
