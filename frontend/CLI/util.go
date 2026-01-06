@@ -3,6 +3,7 @@ package main
 import (
 	"io"
 	"os"
+	"passport-cli/net"
 	"path/filepath"
 	"strings"
 )
@@ -29,4 +30,11 @@ func LoadTitle() string {
 	builder.WriteString(string(content))
 
 	return builder.String()
+}
+
+func EnsureLoggedIn() {
+	if !net.ValidTokenExists() {
+		red.Println("You are signed out and are thus unable to use PASSPORT\nRun 'passport login' to login")
+		panic("Not Logged In")
+	}
 }

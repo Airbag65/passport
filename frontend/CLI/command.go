@@ -105,7 +105,10 @@ func (c *AddCommand) Execute() error {
 }
 
 func (c *ListCommand) Execute() error {
-	fmt.Printf("%+v\n", c)
+	EnsureLoggedIn()
+	for _, host := range net.GetHostNames() {
+		fmt.Printf("%s\n", host)
+	}
 	return nil
 }
 

@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	defer func(){
+	defer func() {
 		rec := recover()
 		if rec != nil {
 			fmt.Println("Exited passport")
@@ -22,7 +22,7 @@ func main() {
 		startScreen := tea.NewProgram(startScreenModel, tea.WithAltScreen())
 		startScreen.Run()
 
-		switch startScreenModel.GetValue(){
+		switch startScreenModel.GetValue() {
 		case 0:
 			loginModel := auth.NewLoginModel()
 			loginScreen := tea.NewProgram(loginModel, tea.WithAltScreen())
@@ -42,7 +42,7 @@ func main() {
 		case 2:
 			panic("exit")
 		}
-	} 
+	}
 	mainScreenModel := pass.NewMainScreenModel()
 	mainscreen := tea.NewProgram(mainScreenModel, tea.WithAltScreen())
 	mainscreen.Run()

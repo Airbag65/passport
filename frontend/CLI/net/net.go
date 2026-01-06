@@ -141,3 +141,37 @@ func SignOut() (int, error) {
 
 	return res.StatusCode, nil
 }
+
+func GetHostNames() []string {
+	req, err := http.NewRequest("GET", "https://localhost:443/pwd/getHosts", bytes.NewBuffer([]byte{}))
+	if err != nil {
+		return []string{}
+	}
+
+	authToken := GetSavedData().AuthToken
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", authToken))
+
+	response, err := Client.Do(req)
+	if err != nil {
+		return []string{}
+	}
+
+	var buffer []byte
+	if response.StatusCode == 200 {
+		buffer, err = io.ReadAll(response.Body)
+		if err != nil {
+			return []string{}
+		}
+	} else {
+		return []string{}
+	}
+
+	var res Hosts
+
+	err = json.Unmarshal(buffer, &res)
+	if err != nil {
+		return []string{}
+	}
+
+	return res.Hosts
+}

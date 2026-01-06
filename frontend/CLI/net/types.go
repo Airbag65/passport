@@ -44,3 +44,6 @@ type LocalAuth struct {
 	AuthToken string `json:"auth_token"`
 }
 
+type Hosts struct {
+	Hosts []string `json:"hosts"`
+}
