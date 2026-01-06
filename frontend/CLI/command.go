@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os"
 	"passport-cli/net"
+	"slices"
 	"text/tabwriter"
+	"time"
 
 	"github.com/Airbag65/argparse"
 )
@@ -41,7 +43,12 @@ func CreateCommand(pc *argparse.ParsedCommand) Command {
 
 func (c *StatusCommand) Execute() error {
 	if net.ValidTokenExists() {
-		green.Println("You are signed in to PASSPORT\nPASSPORT is ready to use")
+		green.Println("You are signed in to PASSPORT! PASSPORT is ready to use")
+		fmt.Println("Your credentials:")
+		fmt.Println("-----------------")
+		userInfo := net.GetSavedData()
+		fmt.Printf("Name: %s %s\n", userInfo.Name, userInfo.Surname)
+		fmt.Printf("Email: %s\n", userInfo.Email)
 		return nil
 	}
 	red.Println("You are not signed in to PASSPORT\nRun 'passport login' to sign in")
@@ -124,6 +131,7 @@ func (c *SignUpCommand) Execute() error {
 }
 
 func (c *AddCommand) Execute() error {
+	EnsureLoggedIn()
 	fmt.Printf("%+v\n", c)
 	return nil
 }
@@ -137,11 +145,31 @@ func (c *ListCommand) Execute() error {
 }
 
 func (c *GetCommand) Execute() error {
-	fmt.Printf("%+v\n", c)
+	EnsureLoggedIn()
+	if !slices.Contains(net.GetHostNames(), c.FlagValue) {
+		red.Printf("Password for '%s' does not exist\nRun 'passport list' or 'passport ls' to see available passwords\n", c.FlagValue)
+		return nil
+	}
+	password, err := net.GetPassword(c.FlagValue)
+	if err != nil {
+		red.Println("Something went wrong")
+	}
+	green.Printf("Password for '%s' has been found\nPress ENTER to reveal\n", c.FlagValue)
+	red.Print("WARNING! Be careful when revealing the password. The password will be printed to the terminal")
+	fmt.Scanln()
+	fmt.Println(password)
+	fmt.Print("Terminal window clearing in ")
+	for i := 10; i > 0; i-- {
+		fmt.Printf("%d... ", i)
+		time.Sleep(1 * time.Second)
+	}
+	// Clear terminal ANSI escape code
+	fmt.Print("\033[H\033[2J")
 	return nil
 }
 
 func (c *RemoveCommand) Execute() error {
+	EnsureLoggedIn()
 	fmt.Printf("%+v\n", c)
 	return nil
 }

@@ -63,3 +63,11 @@ type SignupRequest struct {
 	Name     string `json:"name"`
 	Surname  string `json:"surname"`
 }
+
+type getPasswordRequest struct {
+	HostName string `json:"host_name"`
+}
+
+type getPasswordResonse struct {
+	Password string `json:"password"`
+}

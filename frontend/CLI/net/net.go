@@ -234,3 +234,38 @@ func SignUp(email, password, name, surname string) (*SignupResponse, error) {
 
 	return &signupResponse, nil
 }
+
+func GetPassword(hostName string) (string, error) {
+	getPasswordReq := getPasswordRequest{
+		HostName: hostName,
+	}
+
+	reqBody, err := json.Marshal(getPasswordReq)
+	if err != nil {
+		return "", err
+	}
+	request, err := http.NewRequest("PUT", "https://localhost:443/pwd/get", bytes.NewBuffer(reqBody))
+	if err != nil {
+		return "", err
+	}
+
+	authToken := GetSavedData().AuthToken
+
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", authToken))
+	
+	response, err := Client.Do(request)
+	if err != nil {
+		return "", err
+	}
+
+	if response.StatusCode != 200 {
+		return "", fmt.Errorf("Failed to get password, statusCode was: %d\n", response.StatusCode)
+	}
+	buffer, _ := io.ReadAll(response.Body)
+	var getPasswordRes getPasswordResonse
+	if err = json.Unmarshal(buffer, &getPasswordRes); err != nil {
+		return "", fmt.Errorf("Failed to get password, statusCode was: %d\n", response.StatusCode)
+	}
+	return getPasswordRes.Password, nil
+}

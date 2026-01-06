@@ -9,6 +9,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/Airbag65/argparse"
 	"golang.org/x/term"
 )
 
@@ -51,4 +52,28 @@ func GetPassword(prompt string) string {
 	}
 	fmt.Println("")
 	return string(passBytes)
+}
+
+func InitParser() (*argparse.Parser, error) {
+	commands := []string{"status", "login", "signout", "signup", "add", "get", "list", "ls", "remove", "rm", "help"}
+
+	p := argparse.New()
+	hostDesc := "Specify which host to direct the command at"
+	hostFlag := argparse.NewFlag("--host", hostDesc, true)
+	hFlag := argparse.NewFlag("-h", hostDesc, true)
+	for _, comm := range commands {
+		switch comm {
+		case "get", "remove", "rm":
+			err := p.AddCommand(comm, argparse.AddFlag(hostFlag), argparse.AddFlag(hFlag))
+			if err != nil {
+				return nil, err
+			}
+		default:
+			err := p.AddCommand(comm)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	return p, nil
 }
