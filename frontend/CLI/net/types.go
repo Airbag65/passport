@@ -47,3 +47,19 @@ type LocalAuth struct {
 type Hosts struct {
 	Hosts []string `json:"hosts"`
 }
+
+type SignupResponse struct {
+	ResponseCode    int    `json:"response_code"`
+	ResponseMessage string `json:"response_message"`
+	AuthToken       string `json:"auth_token"`
+	Name            string `json:"name"`
+	Surname         string `json:"surname"`
+	PemString string `json:"pem_string"`
+}
+
+type SignupRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	Name     string `json:"name"`
+	Surname  string `json:"surname"`
+}

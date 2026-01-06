@@ -9,7 +9,6 @@ import (
 	"passport-cli/enc"
 )
 
-
 func ValidTokenExists() bool {
 	localData := GetSavedData()
 
@@ -118,7 +117,7 @@ func SignOut() (int, error) {
 
 	reqBody, err := json.Marshal(signOutReq)
 	if err != nil {
-		return 0,err
+		return 0, err
 	}
 
 	request, err := http.NewRequest("PUT", "https://localhost:443/auth/signOut", bytes.NewBuffer(reqBody))
@@ -174,4 +173,64 @@ func GetHostNames() []string {
 	}
 
 	return res.Hosts
+}
+
+func SignUp(email, password, name, surname string) (*SignupResponse, error) {
+	if email == "" || password == "" || name == "" || surname == "" {
+		return nil, fmt.Errorf("Insufficient infromation provided\n")
+	}
+
+	signupRequest := SignupRequest{
+		Email:    email,
+		Password: password,
+		Name:     name,
+		Surname:  surname,
+	}
+
+	reqBodyBytes, err := json.Marshal(signupRequest)
+	if err != nil {
+		return nil, err
+	}
+
+	request, err := http.NewRequest("POST", "https://localhost:443/auth/new", bytes.NewBuffer(reqBodyBytes))
+	if err != nil {
+		return nil, err
+	}
+
+	request.Header.Set("Content-Type", "application/json")
+
+	response, err := Client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	var buffer []byte
+	if response.StatusCode != 200 {
+		return &SignupResponse{
+			ResponseCode: response.StatusCode,
+		}, nil
+	} 
+
+	var signupResponse SignupResponse
+
+	buffer, err = io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(buffer, &signupResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = enc.StringToPEMFile(signupResponse.PemString); err != nil {
+		return nil, err
+	}
+
+	err = AddLocalAuthToken(signupResponse.AuthToken, signupResponse.Name, signupResponse.Surname, email)
+	if err != nil {
+		return nil, err
+	}
+
+	return &signupResponse, nil
 }

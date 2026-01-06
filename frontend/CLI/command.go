@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"os"
 	"passport-cli/net"
-	"syscall"
 	"text/tabwriter"
 
 	"github.com/Airbag65/argparse"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 func CreateCommand(pc *argparse.ParsedCommand) Command {
@@ -28,14 +26,14 @@ func CreateCommand(pc *argparse.ParsedCommand) Command {
 	case "get":
 		return &GetCommand{
 			FlagExists: pc.Option != "",
-			FlagValue: pc.Parameter,
+			FlagValue:  pc.Parameter,
 		}
 	case "list", "ls":
 		return &ListCommand{}
 	case "remove", "rm":
 		return &RemoveCommand{
 			FlagExists: pc.Option != "",
-			FlagValue: pc.Parameter,
+			FlagValue:  pc.Parameter,
 		}
 	}
 	return nil
@@ -54,13 +52,8 @@ func (c *LoginCommand) Execute() error {
 	var email string
 	fmt.Print("Email: ")
 	fmt.Scan(&email)
-	fmt.Print("Password: ")
-	passBytes, err := terminal.ReadPassword(int(syscall.Stdin))
-	fmt.Println()
-	if err != nil {
-		return err
-	}
-	res, err := net.Login(email, string(passBytes))
+	password := GetPassword("Password: ")
+	res, err := net.Login(email, password)
 	if err != nil {
 		red.Printf("Something went wrong! err: %v\n", err)
 		return err
@@ -95,7 +88,38 @@ func (c *SignOutCommand) Execute() error {
 }
 
 func (c *SignUpCommand) Execute() error {
-	fmt.Printf("%+v\n", c)
+	var email string
+	var name string
+	var surname string
+	var password string
+	var confirmPassword string
+	fmt.Println("Sign up new user")
+	fmt.Println("----------------")
+	fmt.Print("Email: ")
+	fmt.Scan(&email)
+	fmt.Print("First name: ")
+	fmt.Scan(&name)
+	fmt.Print("Surname: ")
+	fmt.Scan(&surname)
+	for {
+		password = GetPassword("Password: ")
+		confirmPassword = GetPassword("Confirm password: ")
+		if password == confirmPassword {
+			break
+		}
+		red.Println("Passwords don't match")
+	}
+	res, err := net.SignUp(email, password, name, surname)
+	if err != nil {
+		red.Println("Something went wrong. Try again later!")
+	}
+	switch res.ResponseCode {
+	case 200:
+		green.Printf("Created new user '%s %s' with email '%s'\n\n", res.Name, res.Surname, email)
+		green.Printf("Signed in as '%s %s'\n", res.Name, res.Surname)
+	case 418:
+		yellow.Printf("User with email '%s' already exists\n", email)
+	}
 	return nil
 }
 
@@ -123,7 +147,7 @@ func (c *RemoveCommand) Execute() error {
 }
 
 func (c *HelpCommand) Execute() error {
-	blue.Println(LoadTitle())	
+	blue.Println(LoadTitle())
 	fmt.Println("Usage: passport <command> [flag] [<value>]")
 	w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
 	fmt.Println("COMMANDS:")
