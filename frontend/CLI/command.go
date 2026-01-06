@@ -79,7 +79,18 @@ func (c *LoginCommand) Execute() error {
 }
 
 func (c *SignOutCommand) Execute() error {
-	fmt.Printf("%+v\n", c)
+	status, err := net.SignOut()
+	if err != nil {
+		red.Printf("Something went wrong! err: %v\n", err)
+		return err
+	}
+
+	switch status {
+	case 200:
+		green.Println("You are now signed out")
+	case 304:
+		yellow.Println("You were already signed out")
+	}
 	return nil
 }
 
@@ -109,7 +120,8 @@ func (c *RemoveCommand) Execute() error {
 }
 
 func (c *HelpCommand) Execute() error {
-	fmt.Println("Usage: passport <command> [flag]")
+	blue.Println(LoadTitle())	
+	fmt.Println("Usage: passport <command> [flag] [<value>]")
 	w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
 	fmt.Println("COMMANDS:")
 	fmt.Fprintln(w, "\tstatus\tCheck login status")

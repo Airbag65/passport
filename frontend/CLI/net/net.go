@@ -2,7 +2,6 @@ package net
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,18 +9,6 @@ import (
 	"passport-cli/enc"
 )
 
-
-type LocalAuth struct {
-	AuthToken string `json:"auth_token"`
-}
-
-var (
-	Client = http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
-	}
-)
 
 func ValidTokenExists() bool {
 	localData := GetSavedData()
@@ -61,21 +48,6 @@ func ValidTokenExists() bool {
 		return false
 	}
 	return true
-}
-
-type LoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-type LoginResponse struct {
-	ResponseCode    int    `json:"response_code"`
-	ResponseMessage string `json:"response_message"`
-	AuthToken       string `json:"auth_token"`
-	Name            string `json:"name"`
-	Surname         string `json:"surname"`
-	Email           string `json:"email"`
-	PemString       string `json:"pem_string"`
 }
 
 func Login(email, password string) (*LoginResponse, error) {
@@ -132,4 +104,40 @@ func Login(email, password string) (*LoginResponse, error) {
 	}
 
 	return &loginRes, nil
+}
+
+func SignOut() (int, error) {
+	email := GetSavedData().Email
+
+	if email == "" {
+		return 304, nil
+	}
+	signOutReq := SignOutRequest{
+		Email: email,
+	}
+
+	reqBody, err := json.Marshal(signOutReq)
+	if err != nil {
+		return 0,err
+	}
+
+	request, err := http.NewRequest("PUT", "https://localhost:443/auth/signOut", bytes.NewBuffer(reqBody))
+	if err != nil {
+		return 0, err
+	}
+
+	request.Header.Set("Content-Type", "application/json")
+
+	res, err := Client.Do(request)
+	if err != nil {
+		return 0, err
+	}
+
+	if res.StatusCode == 200 {
+		if err = RemoveLocalAuthToken(); err != nil {
+			return 0, err
+		}
+	}
+
+	return res.StatusCode, nil
 }

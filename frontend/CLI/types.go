@@ -1,6 +1,8 @@
 package main
 
-import "github.com/fatih/color"
+import (
+	"github.com/fatih/color"
+)
 
 type Command interface {
 	Execute() error
@@ -28,10 +30,11 @@ type GetCommand struct {
 type RemoveCommand struct {
 	FlagExists bool
 	FlagValue  string
-} 
+}
 
 var (
-	red = color.New(color.FgRed)
-	green = color.New(color.FgGreen)
+	red    = color.New(color.FgRed)
+	green  = color.New(color.FgGreen)
 	yellow = color.New(color.FgYellow)
+	blue   = color.RGB(33, 170, 255)
 )
