@@ -5,6 +5,7 @@ import (
 	"os"
 	"passport-cli/net"
 	"slices"
+	"strings"
 	"text/tabwriter"
 	"time"
 
@@ -132,7 +133,35 @@ func (c *SignUpCommand) Execute() error {
 
 func (c *AddCommand) Execute() error {
 	EnsureLoggedIn()
-	fmt.Printf("%+v\n", c)
+	var host, password, confirmPassword string
+	fmt.Print("Enter hostname: ")
+	fmt.Scan(&host)
+	for {
+		password = GetPassword("Password: ")
+		confirmPassword = GetPassword("Confirm password: ")
+		if password == confirmPassword {
+			break
+		}
+		red.Println("Passwords don't match")
+	}
+	if YesNoConfirmation("Would you like to display the password?", false) {
+		PrintFramedWord(password)
+	}
+	
+	var b strings.Builder
+	b.WriteString("\nA new password is about to be saved!\n")
+	b.WriteString("------------------------------------\n")
+	fmt.Fprintf(&b, "Host: %s\n", host)
+	fmt.Fprintf(&b, "Password: %c%s%c\n", password[0], strings.Repeat("*", len(password) - 2), password[len(password) - 1])
+	fmt.Println(b.String())
+	if YesNoConfirmation("Save password to PASSPORT?", true) {
+		if err := net.CreateNewPassword(host, password); err != nil {
+			red.Println("Something went wrong!")
+			return err
+		}
+		green.Println("Password saved")
+	}
+
 	return nil
 }
 
@@ -154,13 +183,14 @@ func (c *GetCommand) Execute() error {
 	if err != nil {
 		red.Println("Something went wrong")
 	}
-	green.Printf("Password for '%s' has been found\nPress ENTER to reveal\n", c.FlagValue)
-	red.Print("WARNING! Be careful when revealing the password. The password will be printed to the terminal")
-	fmt.Scanln()
-	fmt.Println(password)
-	fmt.Print("Terminal window clearing in ")
+	green.Printf("Password for '%s' has been found\n", c.FlagValue)
+	red.Println("WARNING! Be careful when revealing the password. The password will be printed to the terminal window")
+	if YesNoConfirmation("Would you like to display the password?", false) {
+		PrintFramedWord(password)
+	}
+	fmt.Println("Terminal window clearing in")
 	for i := 10; i > 0; i-- {
-		fmt.Printf("%d... ", i)
+		fmt.Printf("\r%d ", i)
 		time.Sleep(1 * time.Second)
 	}
 	// Clear terminal ANSI escape code

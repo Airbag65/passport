@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"passport-cli/enc"
+	"slices"
 )
 
 func ValidTokenExists() bool {
@@ -268,4 +269,57 @@ func GetPassword(hostName string) (string, error) {
 		return "", fmt.Errorf("Failed to get password, statusCode was: %d\n", response.StatusCode)
 	}
 	return getPasswordRes.Password, nil
+}
+
+func CreateNewPassword(hostName, password string) error {
+	if slices.Contains(GetHostNames(), hostName) {
+		return fmt.Errorf("password for host: '%s' already exists", hostName)
+	}
+
+	rsaPemString, err := enc.PEMFileToString()
+	if err != nil {
+		return err
+	}
+
+	publicKey := enc.PemStringToPublicKey(rsaPemString)
+
+	encPassword, err := enc.Encrypt(password, publicKey)
+	if err != nil {
+		return err
+	}
+
+	newPasswordReq := createPasswordRequest{
+		HostName: hostName,
+		Password: string(encPassword),
+	}
+
+	reqBody, err := json.Marshal(newPasswordReq)
+	if err != nil {
+		fmt.Println("Marshal error")
+		fmt.Println(err)
+		return err
+	}
+	request, err := http.NewRequest("POST", "https://localhost:443/pwd/new", bytes.NewBuffer(reqBody))
+	if err != nil {
+		fmt.Println("Create req error")
+		fmt.Println(err)
+		return err
+	}
+
+	authToken := GetSavedData().AuthToken
+
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", authToken))
+	
+	response, err := Client.Do(request)
+	if err != nil {
+		fmt.Println("Send req error")
+		fmt.Println(err)
+		return err
+	}
+
+	if response.StatusCode != 200 {
+		return fmt.Errorf("Failed to create new password, statusCode was: %d\n", response.StatusCode)
+	}
+	return nil
 }

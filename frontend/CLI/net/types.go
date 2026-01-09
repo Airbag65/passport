@@ -5,7 +5,6 @@ import (
 	"net/http"
 )
 
-
 var (
 	Client = http.Client{
 		Transport: &http.Transport{
@@ -54,7 +53,7 @@ type SignupResponse struct {
 	AuthToken       string `json:"auth_token"`
 	Name            string `json:"name"`
 	Surname         string `json:"surname"`
-	PemString string `json:"pem_string"`
+	PemString       string `json:"pem_string"`
 }
 
 type SignupRequest struct {
@@ -69,5 +68,10 @@ type getPasswordRequest struct {
 }
 
 type getPasswordResonse struct {
+	Password string `json:"password"`
+}
+
+type createPasswordRequest struct {
+	HostName string `json:"host_name"`
 	Password string `json:"password"`
 }

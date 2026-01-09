@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"os"
@@ -76,4 +77,27 @@ func InitParser() (*argparse.Parser, error) {
 		}
 	}
 	return p, nil
+}
+
+func YesNoConfirmation(prompt string, defaultYes bool) bool {
+	fmt.Print(prompt)
+	if defaultYes {
+		fmt.Print(" [Y/n] ")
+	} else {
+		fmt.Print(" [y/N] ")
+	}
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	if scanner.Text() == "Y" || scanner.Text() == "y" {
+		return true
+	} else if scanner.Text() == "" && defaultYes {
+		return true
+	}
+	return false
+}
+
+func PrintFramedWord(word string) {
+	fmt.Printf("+%s+\n|", strings.Repeat("-", len(word)))
+	fmt.Print(word)
+	fmt.Printf("|\n+%s+\n", strings.Repeat("-", len(word)))
 }
