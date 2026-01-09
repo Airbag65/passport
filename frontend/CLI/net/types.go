@@ -75,3 +75,7 @@ type createPasswordRequest struct {
 	HostName string `json:"host_name"`
 	Password string `json:"password"`
 }
+
+type DeletePasswordRequest struct {
+	HostName string `json:"host_name"`
+}

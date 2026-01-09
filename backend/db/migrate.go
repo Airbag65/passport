@@ -32,7 +32,7 @@ func (s *LocalStorage) Migrate() {
 	file.Close()
 
 	createTables(s.db)
-	insertDefault(s.db)
+	// insertDefault(s.db)
 	log.Println("Migration finished")
 }
 

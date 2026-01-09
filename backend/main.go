@@ -37,7 +37,6 @@ func main() {
 		switch os.Args[1] {
 		case "migrate":
 			s.Migrate()
-			fmt.Println(s.GetUserWithEmail("normananton03@gmail.com").ToString())
 			return
 		case "keygen":
 			fmt.Println("Generating Keys")

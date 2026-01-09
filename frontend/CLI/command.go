@@ -117,6 +117,10 @@ func (c *SignUpCommand) Execute() error {
 		}
 		red.Println("Passwords don't match")
 	}
+	if net.ValidTokenExists() {
+		green.Printf("Signing out '%s %s'\n", net.GetSavedData().Name, net.GetSavedData().Surname)
+		net.SignOut()
+	}
 	res, err := net.SignUp(email, password, name, surname)
 	if err != nil {
 		red.Println("Something went wrong. Try again later!")
@@ -200,7 +204,17 @@ func (c *GetCommand) Execute() error {
 
 func (c *RemoveCommand) Execute() error {
 	EnsureLoggedIn()
-	fmt.Printf("%+v\n", c)
+	if !slices.Contains(net.GetHostNames(), c.FlagValue) {
+		red.Printf("Password for '%s' does not exist\nRun 'passport list' or 'passport ls' to see available passwords\n", c.FlagValue)
+		return nil
+	}
+	if !YesNoConfirmation(fmt.Sprintf("Are you sure that you want to delete the password for '%s'", c.FlagValue), false) {
+		return nil
+	}
+	if err := net.DeletePassword(c.FlagValue); err != nil {
+		red.Println("Something went wrong!")
+	}
+	fmt.Printf("Deleted password for '%s'\n", c.FlagValue)
 	return nil
 }
 

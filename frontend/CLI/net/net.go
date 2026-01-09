@@ -323,3 +323,34 @@ func CreateNewPassword(hostName, password string) error {
 	}
 	return nil
 }
+
+
+func DeletePassword(hostname string) error {
+	deletePasswordReq := DeletePasswordRequest{
+		HostName: hostname,
+	}
+
+	reqBody, err := json.Marshal(deletePasswordReq)
+	if err != nil {
+		return err
+	}
+	request, err := http.NewRequest("DELETE", "https://localhost:443/pwd/remove", bytes.NewBuffer(reqBody))
+	if err != nil {
+		return err
+	}
+
+	authToken := GetSavedData().AuthToken
+
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", authToken))
+	
+	response, err := Client.Do(request)
+	if err != nil {
+		return err
+	}
+
+	if response.StatusCode != 200 {
+		return fmt.Errorf("Failed to get password, statusCode was: %d\n", response.StatusCode)
+	}
+	return nil	
+}
