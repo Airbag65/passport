@@ -235,6 +235,8 @@ func (c *HelpCommand) Execute() error {
 	fmt.Fprintln(w, "\tls\tList all the hosts you have registered passwords for")
 	fmt.Fprintln(w, "\tremove [-h --host] <hostname>\tRemove the password of the specified hostname. Also removes the host from passport")
 	fmt.Fprintln(w, "\trm [-h --host] <hostname>\tRemove the password of the specified hostname. Also removes the host from passport")
+	fmt.Fprintln(w, "\tgen\tGenerate a new random password")
+	fmt.Fprintln(w, "\tgenerate\tGenerate a new random password")
 	fmt.Fprintln(w, "\thelp\tLists all possible commands and their usage")
 	w.Flush()
 	return nil

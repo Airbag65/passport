@@ -27,4 +27,6 @@ run: clean build
 	@echo "Running project\n\n\n"
 	@./target/bin/main
 
-
+.PHONY: install
+install: build
+	@mv ./target/bin/passport-tui ~/.local/bin/passport-tui

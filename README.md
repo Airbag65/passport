@@ -1,5 +1,5 @@
 # Passport
-Passport is an extremely simple self hosted password manager, that consists of a backend/server, a TUI, a CLI(WIP) and an android application(TBD).
+Passport is an extremely simple self hosted password manager, that consists of a backend/server, a TUI, a CLI and an android application(TBD).
 
 # Getting started
 If it is the first time you are using `passport`, you will need to sign a SSL certificate, for the HTTPS server to run. The
@@ -48,3 +48,26 @@ Running the server requires a `superuser` in order to open the port `:443` (HTTP
 $ sudo ./target/bin/passport-server
 ```
 and enter your sudo password. If everything was done correctly, you should now have the `passport` server up and runnning, ready for use.
+
+## TUI application
+The TUI application that `passport` provides gives you access to a graphical interface without having to leave you precious terminal. To build and install it, place yourself in the `frontend/TUI`
+directory, and then run:
+```bash
+$ make clean
+$ make install
+```
+When that is done, `passport-tui` will be ready to use. To launch it, simply run:
+```bash
+$ passport-tui
+```
+
+## CLI application
+The CLI application allows you to run commands to perform all your `passport` tasks. To install it, place yourself in the `frontend/CLI` directory and run the following:
+```bash
+$ make clean
+$ make install
+```
+The `passport` CLI application is now installed and ready to use. For further instructions on how to use it, run:
+```bash
+$ passport help
+```
