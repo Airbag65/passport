@@ -32,6 +32,8 @@ type RemoveCommand struct {
 	FlagValue  string
 }
 
+type GenerateCommand struct {}
+
 var (
 	red    = color.New(color.FgRed)
 	green  = color.New(color.FgGreen)

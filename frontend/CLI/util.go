@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"math/rand"
 	"os"
 	"passport-cli/net"
 	"path/filepath"
@@ -56,7 +57,7 @@ func GetPassword(prompt string) string {
 }
 
 func InitParser() (*argparse.Parser, error) {
-	commands := []string{"status", "login", "signout", "signup", "add", "get", "list", "ls", "remove", "rm", "help"}
+	commands := []string{"status", "login", "signout", "signup", "add", "get", "list", "ls", "remove", "rm", "help", "gen", "generate"}
 
 	p := argparse.New()
 	hostDesc := "Specify which host to direct the command at"
@@ -100,4 +101,34 @@ func PrintFramedWord(word string) {
 	fmt.Printf("+%s+\n|", strings.Repeat("-", len(word)))
 	fmt.Print(word)
 	fmt.Printf("|\n+%s+\n", strings.Repeat("-", len(word)))
+}
+
+func ChooseRune(choiceString string) rune {
+	i := rand.Intn(len(choiceString))
+	return rune(choiceString[i])
+}
+
+func GeneratePassword() string {
+	l := 20
+	alpha := "abcdefghijklmopqrstuvwxyz"
+	nums := "0123456789"
+	specialChars := "?-=+@$&"
+	res := ""
+	n := 0
+	for len(res) < l {
+		r := ' '
+		switch n {
+		case 0:
+			r = ChooseRune(alpha)
+		case 1:
+			r = ChooseRune(strings.ToUpper(alpha))
+		case 2:
+			r = ChooseRune(nums)
+		case 3:
+			r = ChooseRune(specialChars)
+		}
+		n = rand.Intn(4)
+		res += string(r)
+	}
+	return res
 }

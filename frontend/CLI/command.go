@@ -38,6 +38,8 @@ func CreateCommand(pc *argparse.ParsedCommand) Command {
 			FlagExists: pc.Option != "",
 			FlagValue:  pc.Parameter,
 		}
+	case "gen", "generate":
+		return &GenerateCommand{}
 	}
 	return nil
 }
@@ -235,5 +237,11 @@ func (c *HelpCommand) Execute() error {
 	fmt.Fprintln(w, "\trm [-h --host] <hostname>\tRemove the password of the specified hostname. Also removes the host from passport")
 	fmt.Fprintln(w, "\thelp\tLists all possible commands and their usage")
 	w.Flush()
+	return nil
+}
+
+func (c *GenerateCommand) Execute() error {
+	fmt.Println("Generated password:")
+	PrintFramedWord(GeneratePassword())
 	return nil
 }
