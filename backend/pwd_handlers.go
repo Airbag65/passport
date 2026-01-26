@@ -7,9 +7,6 @@ import (
 	"net/http"
 )
 
-// 4673992a-f65c-4da8-99f0-fa630f54ed28ec0e1431-1674-4c32-a606-efdd160862c7
-
-
 func (h *GetPasswordHostsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		MethodNotAllowed(w)
@@ -22,8 +19,6 @@ func (h *GetPasswordHostsHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 
 	WriteJSON(w, GetPasswordHostsResponse{Hosts: names})
 }
-
-
 
 func (h *UploadNewPasswordHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -55,7 +50,6 @@ func (h *UploadNewPasswordHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 	w.Write([]byte("OK"))
 }
 
-
 func (h *GetPasswordValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
 		MethodNotAllowed(w)
@@ -71,7 +65,7 @@ func (h *GetPasswordValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 		BadRequest(w)
 		return
 	}
-	
+
 	encPassword, err := s.GetPassword(userInformation.Id, request.HostName)
 	if err != nil {
 		NotFound(w)
@@ -83,7 +77,7 @@ func (h *GetPasswordValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 		InternalServerError(w)
 		return
 	}
-	
+
 	privateKey := enc.PemStringToPrivateKey(privatePemString)
 
 	decPassword, err := enc.Decrypt(encPassword, privateKey)
@@ -109,6 +103,25 @@ func (h *RemovePasswordHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 	}
 
 	if err := s.RemovePassword(userInformation.Id, req.HostName); err != nil {
+		NotFound(w)
+	}
+	w.WriteHeader(200)
+	w.Write([]byte("OK"))
+}
+
+func (h *EditPasswordHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		MethodNotAllowed(w)
+		return
+	}
+
+	userInformation := ValidateToken(w, r)
+	var req EditPasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		InternalServerError(w)
+	}
+
+	if err := s.EditPassword(userInformation.Id, req.HostName, req.NewPassword); err != nil {
 		NotFound(w)
 	}
 	w.WriteHeader(200)

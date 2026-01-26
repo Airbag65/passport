@@ -19,7 +19,7 @@ func main() {
 	if err := s.Init(); err != nil {
 		panic("Could not initialize database")
 	}
-	f, err := os.OpenFile("target/log/file.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666) 
+	f, err := os.OpenFile("target/log/file.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		fmt.Printf("error opening file: %v", err)
 		return
@@ -73,7 +73,7 @@ func main() {
 	server.Handle("/pwd/new", &UploadNewPasswordHandler{})
 	server.Handle("/pwd/get", &GetPasswordValueHandler{})
 	server.Handle("/pwd/remove", &RemovePasswordHandler{})
-
+	server.Handle("/pwd/edit", &EditPasswordHandler{})
 
 	handler := cors.Default().Handler(server)
 

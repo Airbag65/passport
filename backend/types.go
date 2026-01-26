@@ -93,15 +93,21 @@ type GetPasswordResonse struct {
 	Password string `json:"password"`
 }
 
-
 type GetPasswordHostsHandler struct{}
 
 type GetPasswordHostsResponse struct {
 	Hosts []string `json:"hosts"`
 }
 
-type RemovePasswordHandler struct {}
+type RemovePasswordHandler struct{}
 
 type RemovePasswordRequest struct {
 	HostName string `json:"host_name"`
+}
+
+type EditPasswordHandler struct{}
+
+type EditPasswordRequest struct {
+	HostName    string `json:"host_name"`
+	NewPassword string `json:"new_password"`
 }

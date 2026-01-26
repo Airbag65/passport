@@ -19,6 +19,7 @@ type Storage interface {
 	GetPassword(int, string) (string, error)
 	RemovePassword(int, string) error
 	Migrate()
+	EditPassword(int, string, string) error
 }
 
 type LocalStorage struct {
@@ -184,7 +185,7 @@ func (s *LocalStorage) GetPassword(userId int, hostname string) (string, error) 
 			user_id = %d
 		AND 
 			host_name = '%s';`, userId, hostname)
-	
+
 	row, err := s.db.Query(getPasswordQuery)
 	if err != nil {
 		log.Fatalf("Could not get host names for user: %d - %v", userId, err)
@@ -200,12 +201,26 @@ func (s *LocalStorage) RemovePassword(userId int, hostname string) error {
 			user_id = ?
 		AND
 			host_name = ?;`
-	statement, err := s.db.Prepare(removePasswordQuery)	
+	statement, err := s.db.Prepare(removePasswordQuery)
 	if err != nil {
 		log.Fatalf("Could not remove password (userId: %d - hostname: %s). Error: %v", userId, hostname, err)
 		return err
 	}
 
 	_, err = statement.Exec(userId, hostname)
+	return err
+}
+
+func (s *LocalStorage) EditPassword(userId int, hostname, newPassword string) error {
+	editPasswordQuery := `UPDATE password
+		SET password = ?
+		WHERE user_id = ? AND host_name = ?;`
+	log.Printf("Updating password for user '%d'", userId)
+	statement, err := s.db.Prepare(editPasswordQuery)
+	if err != nil {
+		log.Fatalf("Could not update password ( userId: %d - hostname: %s). Error: %v", userId, hostname, err)
+		return err
+	}
+	_, err = statement.Exec(newPassword, userId, hostname)
 	return err
 }
