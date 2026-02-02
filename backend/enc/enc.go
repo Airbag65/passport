@@ -14,7 +14,6 @@ import (
 	"os"
 )
 
-
 func GenerateKeys() (*rsa.PrivateKey, *rsa.PublicKey, error) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
@@ -27,7 +26,7 @@ func GenerateKeys() (*rsa.PrivateKey, *rsa.PublicKey, error) {
 func PrivateKeyToPemString(key *rsa.PrivateKey) string {
 	keyDER := x509.MarshalPKCS1PrivateKey(key)
 	keyPEM := pem.EncodeToMemory(&pem.Block{
-		Type:  "PRIVATE KEY",
+		Type:  "RSA PRIVATE KEY",
 		Bytes: keyDER,
 	})
 	return string(keyPEM)
@@ -42,7 +41,7 @@ func PemStringToPrivateKey(pemString string) *rsa.PrivateKey {
 func PublicKeyToPemString(key *rsa.PublicKey) string {
 	keyDER := x509.MarshalPKCS1PublicKey(key)
 	keyPEM := pem.EncodeToMemory(&pem.Block{
-		Type: "PUBLIC KEY",
+		Type:  "RSA PUBLIC KEY",
 		Bytes: keyDER,
 	})
 	return string(keyPEM)
@@ -64,7 +63,7 @@ func PEMFileToString(fileName string) (string, error) {
 		return "", err
 	}
 
-	defer func(){
+	defer func() {
 		if err = pemFile.Close(); err != nil {
 			fmt.Println("Could not close file")
 		}
@@ -74,18 +73,15 @@ func PEMFileToString(fileName string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	return string(pemBytes), nil
 }
-
-
 
 func PemStringToPublicKey(pemString string) *rsa.PublicKey {
 	block, _ := pem.Decode([]byte(pemString))
 	parseRes, _ := x509.ParsePKCS1PublicKey(block.Bytes)
 	return parseRes
 }
-
 
 func Encrypt(message string, publicKey *rsa.PublicKey) ([]byte, error) {
 	encBytes, err := rsa.EncryptOAEP(
