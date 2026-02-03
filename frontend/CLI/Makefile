@@ -12,7 +12,7 @@ clean: confirm
 	@touch ~/.passport/authentication.json
 	@touch ~/.passport/publicKey.pem
 	@echo '{"auth_token":"","name":"","surname":"","email":""}' > ~/.passport/authentication.json
-	@cp ./artistics/title.txt ~/.passport/title.txt
+	@cp ../TUI/artistics/title.txt ~/.passport/passport_title.txt
 
 .PHONY: build
 build: 

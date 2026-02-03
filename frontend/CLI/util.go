@@ -22,7 +22,7 @@ func LoadTitle() string {
 		return ""
 	}
 
-	fullPath := filepath.Join(homeDir, ".passport/title.txt")
+	fullPath := filepath.Join(homeDir, ".passport/passport_title.txt")
 
 	file, err := os.Open(fullPath)
 	if err != nil {

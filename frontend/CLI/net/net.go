@@ -210,7 +210,7 @@ func SignUp(email, password, name, surname string) (*SignupResponse, error) {
 		return &SignupResponse{
 			ResponseCode: response.StatusCode,
 		}, nil
-	} 
+	}
 
 	var signupResponse SignupResponse
 
@@ -254,7 +254,7 @@ func GetPassword(hostName string) (string, error) {
 
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", authToken))
-	
+
 	response, err := Client.Do(request)
 	if err != nil {
 		return "", err
@@ -310,7 +310,7 @@ func CreateNewPassword(hostName, password string) error {
 
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", authToken))
-	
+
 	response, err := Client.Do(request)
 	if err != nil {
 		fmt.Println("Send req error")
@@ -323,7 +323,6 @@ func CreateNewPassword(hostName, password string) error {
 	}
 	return nil
 }
-
 
 func DeletePassword(hostname string) error {
 	deletePasswordReq := DeletePasswordRequest{
@@ -343,7 +342,7 @@ func DeletePassword(hostname string) error {
 
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", authToken))
-	
+
 	response, err := Client.Do(request)
 	if err != nil {
 		return err
@@ -352,5 +351,5 @@ func DeletePassword(hostname string) error {
 	if response.StatusCode != 200 {
 		return fmt.Errorf("Failed to get password, statusCode was: %d\n", response.StatusCode)
 	}
-	return nil	
+	return nil
 }
