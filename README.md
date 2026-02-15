@@ -1,5 +1,5 @@
 # Passport
-Passport is an extremely simple self hosted password manager, that consists of a backend/server, a TUI, a CLI and an android application(TBD).
+Passport is an extremely simple self hosted password manager, that consists of a backend/server, a `TUI`, a [`CLI`](https://github.com/Airbag65/rustport) and an [`android application`(WIP)](https://github.com/Airbag65/passport-mobile).
 
 # Getting started
 If it is the first time you are using `passport`, you will need to sign a SSL certificate, for the HTTPS server to run. The
@@ -62,6 +62,11 @@ $ passport-tui
 ```
 
 ## CLI application
+The CLI application written in `go` is no longer supported and will not be recieving any more updates. The code works, if you wish to use it but it is recommended that you
+opt for [`rustport`](https://github.com/Airbag65/rustport) instead, since it is still supported.
+
+If you nonetheless wish to stick with the `go` version, follow the steps below:
+
 The CLI application allows you to run commands to perform all your `passport` tasks. To install it, place yourself in the `frontend/CLI` directory and run the following:
 ```bash
 $ make clean
