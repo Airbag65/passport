@@ -14,7 +14,7 @@ type Storage interface {
 	GetUserWithAuthToken(string) *User
 	ValidateToken(string, string, string) bool
 	SetNewAuthToken(string, string, string, string)
-	SetClientAuthToken(string, string, string)
+	SetClientAuthToken(string, string, string) (string, error)
 	RemoveAuthToken(string, string)
 	CreateNewUser(string, string, string, string)
 	AddNewPassord(int, string, string) error
@@ -148,8 +148,36 @@ func (s *LocalStorage) SetNewAuthToken(userEmail, userToken, clientToken, ipAddr
 	log.Printf("Updated AUTH on '%s'", userEmail)
 }
 
-func (s *LocalStorage) SetClientAuthToken(userEmail, clientToken, ipAddr string) {
-
+func (s *LocalStorage) SetClientAuthToken(userEmail, clientToken, ipAddr string) (string, error) {
+	expiryDate := time.Now().AddDate(0, 1, 0).Unix()
+	user := s.GetUserWithEmail(userEmail)
+	if user == nil {
+		log.Fatalf("Could not get user with email '%s'", userEmail)
+	}
+	userQuery := `UPDATE user
+	SET logged_in_count = ?
+	WHERE email = ?;`
+	userStmt, err := s.db.Prepare(userQuery)
+	if err != nil {
+		log.Fatalf("Could not update logged_in_count for user '%s'", userEmail)
+		return "", nil
+	}
+	userStmt.Exec(user.LoggedInCount+1, userEmail)
+	clientQuery := `INSERT INTO auth_key(
+		ip_addr,
+		user_token,
+		client_token,
+		token_expiry_date
+	) VALUES (
+		?,?,?,?		
+	);`
+	clientStmt, err := s.db.Prepare(clientQuery)
+	if err != nil {
+		log.Fatalf("Could not add client token for '%s' '%s'", userEmail, ipAddr)
+		return "", err
+	}
+	clientStmt.Exec(ipAddr, user.AuthToken, clientToken, expiryDate)
+	return user.AuthToken + "+" + clientToken, nil
 }
 
 func (s *LocalStorage) RemoveAuthToken(userEmail, ipAddr string) {
@@ -158,33 +186,34 @@ func (s *LocalStorage) RemoveAuthToken(userEmail, ipAddr string) {
 		log.Fatal("User not found(RemoveAuthToken)")
 		return
 	}
-	removeTokenQuery := `DELETE FROM auth_key WHERE
+	removeClientTokenQuery := `DELETE FROM auth_key WHERE
 		ip_addr = ?
 	AND
 		user_token = ?;`
+	clientStmt, err := s.db.Prepare(removeClientTokenQuery)
+	if err != nil {
+		log.Fatalf("Could not remove Client Auth Token on %s", ipAddr)
+		return
+	}
+	clientStmt.Exec(ipAddr, user.AuthToken)
+	userQuery := ""
 	if user.LoggedInCount-1 == 0 {
-		removeTokenQuery += `UPDATE user
+		userQuery += `UPDATE user
 		SET auth_token = '',
 			logged_in_count = 0
 		WHERE
 			email = ?;`
 	} else {
-		removeTokenQuery += fmt.Sprintf(`UPDATE user
+		userQuery += fmt.Sprintf(`UPDATE user
 		SET logged_in_count = %d
 		WHERE email = ?;`, user.LoggedInCount-1)
 	}
-	// removeTokenQuery := fmt.Sprintf(`UPDATE user
-	//    SET auth_token = '',
-	//        token_expiry_date = 0
-	//    WHERE
-	//    email = '%s';`, userEmail)
-
-	statement, err := s.db.Prepare(removeTokenQuery)
+	userStmt, err := s.db.Prepare(userQuery)
 	if err != nil {
 		log.Fatalf("Could not remove AUTH token on '%s'", userEmail)
 		return
 	}
-	statement.Exec(ipAddr, user.AuthToken, userEmail)
+	userStmt.Exec(userEmail)
 	log.Printf("Removed AUTH token on '%s'", userEmail)
 }
 

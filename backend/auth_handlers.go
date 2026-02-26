@@ -70,9 +70,18 @@ func (l *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	newUserToken := fmt.Sprintf("%s%s", uuid.New().String(), uuid.New().String())
 	newClientToken := fmt.Sprintf("%s%s", uuid.New().String(), uuid.New().String())
 	ipAddr := GetRequestIP(r)
-
-	s.SetNewAuthToken(request.Email, newUserToken, newClientToken, ipAddr)
 	responseToken := newUserToken + "+" + newClientToken
+
+	if userInformation.LoggedInCount == 0 {
+		s.SetNewAuthToken(request.Email, newUserToken, newClientToken, ipAddr)
+	} else {
+		tok, err := s.SetClientAuthToken(request.Email, newClientToken, ipAddr)
+		if err != nil {
+			InternalServerError(w)
+			return
+		}
+		responseToken = tok
+	}
 
 	loginResponse.AuthToken = responseToken
 
@@ -95,6 +104,11 @@ func (v *ValidateTokenHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
 		BadRequest(w)
+		return
+	}
+
+	if request.AuthToken == "" {
+		Unauthorized(w)
 		return
 	}
 
