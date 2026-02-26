@@ -98,7 +98,7 @@ func (v *ValidateTokenHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	userInformation := s.GetUserWithAuthToken(request.AuthToken)
+	userInformation := s.GetUserWithAuthToken(request.AuthToken, GetRequestIP(r))
 	if userInformation == nil {
 		Unauthorized(w)
 		return

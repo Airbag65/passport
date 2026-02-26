@@ -4,13 +4,14 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 )
 
 type Storage interface {
 	Init() error
 	GetUserWithEmail(string) *User
-	GetUserWithAuthToken(string) *User
+	GetUserWithAuthToken(string, string) *User
 	SetNewAuthToken(string, string, string, string)
 	SetClientAuthToken(string, string, string)
 	RemoveAuthToken(string)
@@ -62,10 +63,13 @@ func (s *LocalStorage) GetUserWithEmail(userEmail string) *User {
 	return user
 }
 
-func (s *LocalStorage) GetUserWithAuthToken(authToken string) *User {
-	row, err := s.db.Query(fmt.Sprintf("SELECT * FROM user where auth_token = '%s';", authToken))
+func (s *LocalStorage) GetUserWithAuthToken(authToken, ipAddr string) *User {
+	splitToken := strings.Split(authToken, "+")
+	userToken := splitToken[0]
+	clientToken := splitToken[1]
+	row, err := s.db.Query(fmt.Sprintf("SELECT * FROM user where auth_token = '%s';", userToken))
 	if err != nil {
-		log.Fatalf("Could not retrieve user with auth_token '%s'", authToken)
+		log.Fatalf("Could not retrieve user with auth_token '%s'", userToken)
 		return nil
 	}
 
@@ -81,7 +85,18 @@ func (s *LocalStorage) GetUserWithAuthToken(authToken string) *User {
 		return nil
 	}
 
-	if selectedUser.TokenExpiryDate <= time.Now().Unix() {
+	row, err = s.db.Query(fmt.Sprintf("SELECT * FROM auth_key WHERE user_token = '%s' AND ip_addr = '%s' AND client_token = '%s';", userToken, ipAddr, clientToken))
+	if err != nil {
+		log.Fatalf("Could not retrieve auth_key with auth_token '%s'", userToken)
+		return nil
+	}
+	authKey := DbEntryToAuthKey(row)
+	if authKey == nil {
+		log.Println("AuthKey not found")
+		return nil
+	}
+
+	if authKey.TokenExpiryDate <= time.Now().Unix() {
 		log.Println("auth_token not valid")
 		s.RemoveAuthToken(selectedUser.Email)
 		return nil
