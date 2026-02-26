@@ -55,8 +55,7 @@ func createTables(db *sql.DB) {
         "password" TEXT NOT NULL,
         "name" TEXT NOT NULL,
         "surname" TEXT NOT NULL,
-        "auth_token" TEXT, 
-        "token_expiry_date" integer
+        "auth_token" TEXT
     );`
 	CreatePasswordsTableQuery := `CREATE TABLE password (
         "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -66,8 +65,15 @@ func createTables(db *sql.DB) {
         FOREIGN KEY(user_id) REFERENCES user(id)
     );`
 
+	CreateAuthTable := `CREATE TABLE auth_key (
+    	"id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+    	"ip_addr" TEXT NOT NULL,
+    	"user_token" TEXT NOT NULL,
+    	"client_token" TEXT NOT NULL,
+        "token_expiry_date" integer
+    );`
 
-	log.Println("Creating 'user' tables")
+	log.Println("Creating 'user' table")
 
 	statement, err := db.Prepare(CreateUsersTablesQuery)
 	if err != nil {
@@ -76,7 +82,7 @@ func createTables(db *sql.DB) {
 	}
 	statement.Exec()
 
-	log.Println("Creating 'password' tables")
+	log.Println("Creating 'password' table")
 
 	statement, err = db.Prepare(CreatePasswordsTableQuery)
 	if err != nil {
@@ -84,5 +90,14 @@ func createTables(db *sql.DB) {
 		return
 	}
 	statement.Exec()
+
+	log.Println("Creating 'auth_key' table")
+	statement, err = db.Prepare(CreateAuthTable)
+	if err != nil {
+		log.Fatalf("Error creating 'auth_key' table: %s", err)
+		return
+	}
+	statement.Exec()
+
 	log.Println("All tables created")
 }

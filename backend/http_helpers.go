@@ -60,3 +60,6 @@ func ValidateToken(w http.ResponseWriter, r *http.Request) *db.User {
 	return userInformation
 }
 
+func GetRequestIP(r *http.Request) string {
+	return strings.Split(r.RemoteAddr, ":")[0]
+}

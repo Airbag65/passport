@@ -11,7 +11,8 @@ type Storage interface {
 	Init() error
 	GetUserWithEmail(string) *User
 	GetUserWithAuthToken(string) *User
-	SetAuthToken(string, string)
+	SetNewAuthToken(string, string, string, string)
+	SetClientAuthToken(string, string, string)
 	RemoveAuthToken(string)
 	CreateNewUser(string, string, string, string)
 	AddNewPassord(int, string, string) error
@@ -89,20 +90,38 @@ func (s *LocalStorage) GetUserWithAuthToken(authToken string) *User {
 	return selectedUser
 }
 
-func (s *LocalStorage) SetAuthToken(userEmail, authToken string) {
+func (s *LocalStorage) SetNewAuthToken(userEmail, userToken, clientToken, ipAddr string) {
 	expiryDate := time.Now().AddDate(0, 1, 0).Unix()
 	updateUserQuery := fmt.Sprintf(`UPDATE user
-    SET auth_token = '%s',
-        token_expiry_date = %d
+    SET auth_token = '%s'
     WHERE 
-    email = '%s';`, authToken, expiryDate, userEmail)
-	statement, err := s.db.Prepare(updateUserQuery)
+    email = '%s';`, userToken, userEmail)
+	userStmt, err := s.db.Prepare(updateUserQuery)
 	if err != nil {
 		log.Fatalf("Could not update AUTH on '%s'(SetAuthToken)", userEmail)
 		return
 	}
-	statement.Exec()
+	userStmt.Exec()
+	clientAuthQuery := `INSERT INTO auth_key(
+		ip_addr,
+		user_token,
+		client_token,
+		token_expiry_date
+	) VALUES (
+		?,?,?,?
+	);`
+	tokenStmt, err := s.db.Prepare(clientAuthQuery)
+	if err != nil {
+		log.Fatalf("Could not add CLIENT TOKEN on '%s', '%s'", userEmail, ipAddr)
+		return
+	}
+	tokenStmt.Exec(ipAddr, userToken, clientToken, expiryDate)
+
 	log.Printf("Updated AUTH on '%s'", userEmail)
+}
+
+func (s *LocalStorage) SetClientAuthToken(userEmail, clientToken, ipAddr string) {
+
 }
 
 func (s *LocalStorage) RemoveAuthToken(userEmail string) {
@@ -132,16 +151,15 @@ func (s *LocalStorage) CreateNewUser(email, password, name, surname string) {
         password, 
         name, 
         surname,
-        auth_token, 
-        token_expiry_date) 
-        VALUES(?,?,?,?,?,?);`
+        auth_token) 
+        VALUES(?,?,?,?,?);`
 	log.Println("Inserting new user")
 	statement, err := s.db.Prepare(createNewUserQuery)
 	if err != nil {
 		log.Fatalf("Error inserting new user '%s'", email)
 		return
 	}
-	statement.Exec(email, password, name, surname, "", 0)
+	statement.Exec(email, password, name, surname, "")
 	log.Printf("Created user '%s %s' - '%s'", name, surname, email)
 }
 

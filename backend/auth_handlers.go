@@ -15,7 +15,6 @@ func (h *HomeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("OK!\n"))
 }
 
-
 func (l *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		MethodNotAllowed(w)
@@ -41,11 +40,11 @@ func (l *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if userInformation.AuthToken != "" {
-		w.WriteHeader(418)
-		w.Write([]byte("Already signed in"))
-		return
-	}
+	// if userInformation.AuthToken != "" {
+	// 	w.WriteHeader(418)
+	// 	w.Write([]byte("Already signed in"))
+	// 	return
+	// }
 
 	if encryptPassword(request.Password) != userInformation.Password {
 		Unauthorized(w)
@@ -54,25 +53,31 @@ func (l *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	pemString, err := enc.PEMFileToString("publicKey")
 	if err != nil {
-		log.Printf("Error: %v", err)	
+		log.Printf("Error: %v", err)
 		InternalServerError(w)
 		return
 	}
 
-	newAuthToken := fmt.Sprintf("%s%s", uuid.New().String(), uuid.New().String())
 	loginResponse := &LoginResponse{
 		ResponseCode:    200,
 		ResponseMessage: "OK",
-		AuthToken:       newAuthToken,
+		AuthToken:       "",
 		Name:            userInformation.Name,
 		Surname:         userInformation.Surname,
 		Email:           userInformation.Email,
 		PemString:       pemString,
 	}
-	s.SetAuthToken(request.Email, newAuthToken)
+	newUserToken := fmt.Sprintf("%s%s", uuid.New().String(), uuid.New().String())
+	newClientToken := fmt.Sprintf("%s%s", uuid.New().String(), uuid.New().String())
+	ipAddr := GetRequestIP(r)
+
+	s.SetNewAuthToken(request.Email, newUserToken, newClientToken, ipAddr)
+	responseToken := newUserToken + "+" + newClientToken
+
+	loginResponse.AuthToken = responseToken
+
 	WriteJSON(w, loginResponse)
 }
-
 
 func (v *ValidateTokenHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -150,7 +155,7 @@ func (h *SignOutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.RemoveAuthToken(request.Email)
 
 	WriteJSON(w, SignOutResponse{
-		ResponseCode: 200,
+		ResponseCode:    200,
 		ResponseMessage: "OK",
 	})
 }
@@ -188,18 +193,22 @@ func (c *CreateNewUserHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	}
 
 	encPwd := encryptPassword(request.Password)
-	
+
 	s.CreateNewUser(request.Email, encPwd, request.Name, request.Surname)
-	newAuthToken := fmt.Sprintf("%s%s", uuid.New().String(), uuid.New().String())
 
 	newUserResponse := &CreateNewUserResponse{
 		ResponseCode:    200,
 		ResponseMessage: "OK",
-		AuthToken:       newAuthToken,
+		AuthToken:       "",
 		Name:            request.Name,
 		Surname:         request.Surname,
 		PemString:       pemString,
 	}
-	s.SetAuthToken(request.Email, newAuthToken)
+	newUserToken := fmt.Sprintf("%s%s", uuid.New().String(), uuid.New().String())
+	newClientToken := fmt.Sprintf("%s%s", uuid.New().String(), uuid.New().String())
+	ipAddr := GetRequestIP(r)
+	s.SetNewAuthToken(request.Email, newUserToken, newClientToken, ipAddr)
+	responseToken := newUserToken + "+" + newClientToken
+	newUserResponse.AuthToken = responseToken
 	WriteJSON(w, newUserResponse)
 }
