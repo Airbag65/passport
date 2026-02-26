@@ -11,10 +11,11 @@ import (
 type Storage interface {
 	Init() error
 	GetUserWithEmail(string) *User
-	GetUserWithAuthToken(string, string) *User
+	GetUserWithAuthToken(string) *User
+	ValidateToken(string, string, string) bool
 	SetNewAuthToken(string, string, string, string)
 	SetClientAuthToken(string, string, string)
-	RemoveAuthToken(string)
+	RemoveAuthToken(string, string)
 	CreateNewUser(string, string, string, string)
 	AddNewPassord(int, string, string) error
 	GetHostNames(int) []string
@@ -63,10 +64,10 @@ func (s *LocalStorage) GetUserWithEmail(userEmail string) *User {
 	return user
 }
 
-func (s *LocalStorage) GetUserWithAuthToken(authToken, ipAddr string) *User {
+func (s *LocalStorage) GetUserWithAuthToken(authToken string) *User {
 	splitToken := strings.Split(authToken, "+")
 	userToken := splitToken[0]
-	clientToken := splitToken[1]
+	// clientToken := splitToken[1]
 	row, err := s.db.Query(fmt.Sprintf("SELECT * FROM user where auth_token = '%s';", userToken))
 	if err != nil {
 		log.Fatalf("Could not retrieve user with auth_token '%s'", userToken)
@@ -85,30 +86,42 @@ func (s *LocalStorage) GetUserWithAuthToken(authToken, ipAddr string) *User {
 		return nil
 	}
 
-	row, err = s.db.Query(fmt.Sprintf("SELECT * FROM auth_key WHERE user_token = '%s' AND ip_addr = '%s' AND client_token = '%s';", userToken, ipAddr, clientToken))
+	return selectedUser
+}
+
+func (s *LocalStorage) ValidateToken(authToken, ipAddr, userEmail string) bool {
+	tokens := strings.Split(authToken, "+")
+
+	row, err := s.db.Query(fmt.Sprintf(`SELECT * FROM auth_key
+		WHERE
+			user_token = '%s'
+		AND
+			ip_addr = '%s'
+		AND
+			client_token = '%s';`, tokens[0], ipAddr, tokens[1]))
 	if err != nil {
-		log.Fatalf("Could not retrieve auth_key with auth_token '%s'", userToken)
-		return nil
+		log.Fatalf("Could not retrieve auth_key with auth_token '%s'", tokens[0])
+		return false
 	}
 	authKey := DbEntryToAuthKey(row)
 	if authKey == nil {
 		log.Println("AuthKey not found")
-		return nil
+		return false
 	}
 
 	if authKey.TokenExpiryDate <= time.Now().Unix() {
 		log.Println("auth_token not valid")
-		s.RemoveAuthToken(selectedUser.Email)
-		return nil
+		s.RemoveAuthToken(userEmail, ipAddr)
+		return false
 	}
-
-	return selectedUser
+	return true
 }
 
 func (s *LocalStorage) SetNewAuthToken(userEmail, userToken, clientToken, ipAddr string) {
 	expiryDate := time.Now().AddDate(0, 1, 0).Unix()
 	updateUserQuery := fmt.Sprintf(`UPDATE user
-    SET auth_token = '%s'
+    SET auth_token = '%s',
+    	logged_in_count = 1
     WHERE 
     email = '%s';`, userToken, userEmail)
 	userStmt, err := s.db.Prepare(updateUserQuery)
@@ -139,24 +152,39 @@ func (s *LocalStorage) SetClientAuthToken(userEmail, clientToken, ipAddr string)
 
 }
 
-func (s *LocalStorage) RemoveAuthToken(userEmail string) {
+func (s *LocalStorage) RemoveAuthToken(userEmail, ipAddr string) {
 	user := s.GetUserWithEmail(userEmail)
 	if user == nil {
 		log.Fatal("User not found(RemoveAuthToken)")
 		return
 	}
-	removeTokenQuery := fmt.Sprintf(`UPDATE user
-    SET auth_token = '',
-        token_expiry_date = 0
-    WHERE
-    email = '%s';`, userEmail)
+	removeTokenQuery := `DELETE FROM auth_key WHERE
+		ip_addr = ?
+	AND
+		user_token = ?;`
+	if user.LoggedInCount-1 == 0 {
+		removeTokenQuery += `UPDATE user
+		SET auth_token = '',
+			logged_in_count = 0
+		WHERE
+			email = ?;`
+	} else {
+		removeTokenQuery += fmt.Sprintf(`UPDATE user
+		SET logged_in_count = %d
+		WHERE email = ?;`, user.LoggedInCount-1)
+	}
+	// removeTokenQuery := fmt.Sprintf(`UPDATE user
+	//    SET auth_token = '',
+	//        token_expiry_date = 0
+	//    WHERE
+	//    email = '%s';`, userEmail)
 
 	statement, err := s.db.Prepare(removeTokenQuery)
 	if err != nil {
 		log.Fatalf("Could not remove AUTH token on '%s'", userEmail)
 		return
 	}
-	statement.Exec()
+	statement.Exec(ipAddr, user.AuthToken, userEmail)
 	log.Printf("Removed AUTH token on '%s'", userEmail)
 }
 
@@ -166,15 +194,16 @@ func (s *LocalStorage) CreateNewUser(email, password, name, surname string) {
         password, 
         name, 
         surname,
-        auth_token) 
-        VALUES(?,?,?,?,?);`
+        auth_token,
+        logged_in_count) 
+        VALUES(?,?,?,?,?,?);`
 	log.Println("Inserting new user")
 	statement, err := s.db.Prepare(createNewUserQuery)
 	if err != nil {
 		log.Fatalf("Error inserting new user '%s'", email)
 		return
 	}
-	statement.Exec(email, password, name, surname, "")
+	statement.Exec(email, password, name, surname, "", 0)
 	log.Printf("Created user '%s %s' - '%s'", name, surname, email)
 }
 

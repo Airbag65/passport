@@ -6,12 +6,13 @@ import (
 )
 
 type User struct {
-	Email     string `json:"email"`
-	Password  string `json:"password"`
-	Name      string `json:"name"`
-	Surname   string `json:"surname"`
-	Id        int    `json:"id"`
-	AuthToken string `json:"auth_token"`
+	Email         string `json:"email"`
+	Password      string `json:"password"`
+	Name          string `json:"name"`
+	Surname       string `json:"surname"`
+	Id            int    `json:"id"`
+	AuthToken     string `json:"auth_token"`
+	LoggedInCount int    `json:"logged_in_count"`
 }
 
 type AuthKey struct {
@@ -35,7 +36,7 @@ func (user *User) ToString() string {
 func DbEntryToUser(row *sql.Rows) *User {
 	selectedUser := &User{}
 	for row.Next() {
-		row.Scan(&selectedUser.Id, &selectedUser.Email, &selectedUser.Password, &selectedUser.Name, &selectedUser.Surname, &selectedUser.AuthToken)
+		row.Scan(&selectedUser.Id, &selectedUser.Email, &selectedUser.Password, &selectedUser.Name, &selectedUser.Surname, &selectedUser.AuthToken, &selectedUser.LoggedInCount)
 	}
 	if selectedUser.Name == "" {
 		return nil

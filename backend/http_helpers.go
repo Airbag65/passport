@@ -52,7 +52,7 @@ func ValidateToken(w http.ResponseWriter, r *http.Request) *db.User {
 	}
 	token := strings.Split(tokenHeader, " ")[1]
 
-	userInformation := s.GetUserWithAuthToken(token, GetRequestIP(r))
+	userInformation := s.GetUserWithAuthToken(token)
 	if userInformation == nil {
 		Unauthorized(w)
 		return nil

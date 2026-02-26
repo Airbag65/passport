@@ -55,7 +55,8 @@ func createTables(db *sql.DB) {
         "password" TEXT NOT NULL,
         "name" TEXT NOT NULL,
         "surname" TEXT NOT NULL,
-        "auth_token" TEXT
+        "auth_token" TEXT,
+        "logged_in_count" integer NOT NULL
     );`
 	CreatePasswordsTableQuery := `CREATE TABLE password (
         "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,

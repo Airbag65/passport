@@ -98,8 +98,14 @@ func (v *ValidateTokenHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	userInformation := s.GetUserWithAuthToken(request.AuthToken, GetRequestIP(r))
+	userInformation := s.GetUserWithAuthToken(request.AuthToken)
 	if userInformation == nil {
+		Unauthorized(w)
+		return
+	}
+
+	valid := s.ValidateToken(request.AuthToken, GetRequestIP(r), userInformation.Email)
+	if !valid {
 		Unauthorized(w)
 		return
 	}
@@ -152,7 +158,7 @@ func (h *SignOutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.RemoveAuthToken(request.Email)
+	s.RemoveAuthToken(request.Email, GetRequestIP(r))
 
 	WriteJSON(w, SignOutResponse{
 		ResponseCode:    200,
