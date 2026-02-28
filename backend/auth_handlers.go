@@ -232,3 +232,50 @@ func (c *CreateNewUserHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	newUserResponse.AuthToken = responseToken
 	WriteJSON(w, newUserResponse)
 }
+
+func (h *RequestResetAccountHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		MethodNotAllowed(w)
+		return
+	}
+	if r.Header.Get("Content-Type") != "application/json" {
+		BadRequest(w)
+		return
+	}
+
+	var request RequestResetAccountRequest
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		BadRequest(w)
+		return
+	}
+	user := s.GetUserWithEmail(request.Email)
+	if user == nil {
+		NotFound(w)
+		return
+	}
+	tokenString, err := CreateToken(request.Email, user.Name, user.Surname)
+	if err != nil {
+		InternalServerError(w)
+		return
+	}
+	var usedIP string
+	if request.Debug {
+		usedIP = "127.0.0.1"
+	} else {
+		usedIP = GetLocalIP()
+	}
+	url := fmt.Sprintf("https://%s:443/auth/reset/%s", usedIP, tokenString)
+	res := &RequsetResetAccountResponse{
+		Url:   url,
+		Token: tokenString,
+	}
+
+	WriteJSON(w, res)
+}
+
+func (h *ResetAccountHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		MethodNotAllowed(w)
+	}
+}

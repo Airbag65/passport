@@ -67,6 +67,8 @@ func main() {
 	server.Handle("/auth/valid", &ValidateTokenHandler{})
 	server.Handle("/auth/signOut", &SignOutHandler{})
 	server.Handle("/auth/new", &CreateNewUserHandler{})
+	server.Handle("/auth/reset", &RequestResetAccountHandler{})
+	server.Handle("/auth/reset/:jwt", &ResetAccountHandler{})
 
 	// PWD handlers
 	server.Handle("/pwd/getHosts", &GetPasswordHostsHandler{})

@@ -111,3 +111,17 @@ type EditPasswordRequest struct {
 	HostName    string `json:"host_name"`
 	NewPassword string `json:"new_password"`
 }
+
+type RequestResetAccountHandler struct{}
+
+type RequestResetAccountRequest struct {
+	Email string `json:"email"`
+	Debug bool   `json:"debug,omitempty"`
+}
+
+type RequsetResetAccountResponse struct {
+	Url   string `json:"url"`
+	Token string `json:"token"`
+}
+
+type ResetAccountHandler struct{}
