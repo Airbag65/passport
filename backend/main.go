@@ -3,6 +3,7 @@ package main
 import (
 	"SH-password-manager/db"
 	"SH-password-manager/enc"
+	"context"
 
 	"fmt"
 	"log"
@@ -68,7 +69,13 @@ func main() {
 	server.Handle("/auth/signOut", &SignOutHandler{})
 	server.Handle("/auth/new", &CreateNewUserHandler{})
 	server.Handle("/auth/reset", &RequestResetAccountHandler{})
-	server.Handle("/auth/reset/:jwt", &ResetAccountHandler{})
+	server.HandleFunc("/auth/resetAcc", func(w http.ResponseWriter, r *http.Request) {
+		token := GetQueryParams(r.URL)["token"]
+		ctx := context.WithValue(r.Context(), "token", token)
+		r = r.WithContext(ctx)
+		handler := ResetAccountHandler{}
+		handler.ServeHTTP(w, r)
+	})
 
 	// PWD handlers
 	server.Handle("/pwd/getHosts", &GetPasswordHostsHandler{})

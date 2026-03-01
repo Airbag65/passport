@@ -125,3 +125,5 @@ type RequsetResetAccountResponse struct {
 }
 
 type ResetAccountHandler struct{}
+
+type ctxKey struct{}
