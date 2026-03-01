@@ -13,11 +13,10 @@ import (
 	"path/filepath"
 )
 
-
 func PublicKeyToPemString(key *rsa.PublicKey) string {
 	keyDER := x509.MarshalPKCS1PublicKey(key)
 	keyPEM := pem.EncodeToMemory(&pem.Block{
-		Type: "PUBLIC KEY",
+		Type:  "PUBLIC KEY",
 		Bytes: keyDER,
 	})
 	return string(keyPEM)
@@ -54,7 +53,7 @@ func PEMFileToString() (string, error) {
 		return "", err
 	}
 
-	defer func(){
+	defer func() {
 		if err = pemFile.Close(); err != nil {
 			fmt.Println("Could not close file")
 		}
@@ -64,7 +63,7 @@ func PEMFileToString() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	return string(pemBytes), nil
 }
 

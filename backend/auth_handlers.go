@@ -265,17 +265,33 @@ func (h *RequestResetAccountHandler) ServeHTTP(w http.ResponseWriter, r *http.Re
 	} else {
 		usedIP = GetLocalIP()
 	}
-	url := fmt.Sprintf("https://%s:443/auth/reset/%s", usedIP, tokenString)
+	url := fmt.Sprintf("https://%s:443/auth/resetAcc?token=%s", usedIP, tokenString)
+	err = SendResetEmail(url, request.Email, user.Name, user.Surname)
+	if err != nil {
+		InternalServerError(w)
+		return
+	}
 	res := &RequsetResetAccountResponse{
 		Url:   url,
 		Token: tokenString,
 	}
-
 	WriteJSON(w, res)
 }
 
 func (h *ResetAccountHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPut {
+	if r.Method != http.MethodGet {
 		MethodNotAllowed(w)
 	}
+	ctx := r.Context()
+	val := ctx.Value("token").(string)
+	token, err := VerifyToken(val)
+	if err != nil {
+		InternalServerError(w)
+		return
+	}
+	email, _, _ := ParseToken(token)
+	// fmt.Println(fmt.Sprintf(ReadHTMLFile("reset.html"), email, val))
+	// WriteJSON(w, fmt.Sprintf("%s - %s %s", email, name, surname))
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprintf(w, ReadHTMLFile("reset.html"), email, val)
 }

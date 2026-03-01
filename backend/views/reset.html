@@ -1,0 +1,18 @@
+<html>
+	<head>
+		<meta charset='UTF-8'>
+		<meta name='viewport' content='width=device-width, initial-scale=1'>
+		<link rel='stylesheet' href='https://cdn.simplecss.org/simple.css'>
+		<title>PASSPORT - Reset account</title>
+	</head>
+	<body>
+		<h3>
+			%s - reset account
+		</h3>
+		<form method='POST' action='/auth/account/reset'>
+			<input type='password' placeholder='New password' name='new_password'>
+			<input type='hidden' value='%s' name='token'>
+			<input type='submit' value='Submit'>
+		</form>
+	</body>
+</html>

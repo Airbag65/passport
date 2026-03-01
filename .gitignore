@@ -7,3 +7,4 @@ backend/cert.pem
 backend/key.pem
 backend/SH-password-manager
 backend/target
+backend/.env

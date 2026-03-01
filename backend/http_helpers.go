@@ -3,7 +3,6 @@ package main
 import (
 	"SH-password-manager/db"
 	"encoding/json"
-	"net"
 	"net/http"
 	"strings"
 )
@@ -59,19 +58,4 @@ func ValidateToken(w http.ResponseWriter, r *http.Request) *db.User {
 		return nil
 	}
 	return userInformation
-}
-
-func GetRequestIP(r *http.Request) string {
-	return strings.Split(r.RemoteAddr, ":")[0]
-}
-
-func GetLocalIP() string {
-	conn, err := net.Dial("udp", "8.8.8.8:88")
-	if err != nil {
-		return ""
-	}
-	defer conn.Close()
-
-	localAddr := conn.LocalAddr().(*net.UDPAddr)
-	return localAddr.IP.String()
 }
