@@ -120,10 +120,9 @@ type RequestResetAccountRequest struct {
 }
 
 type RequsetResetAccountResponse struct {
-	Url   string `json:"url"`
-	Token string `json:"token"`
+	Url string `json:"url"`
 }
 
 type ResetAccountHandler struct{}
 
-type ctxKey struct{}
+type AccountResetter struct{}

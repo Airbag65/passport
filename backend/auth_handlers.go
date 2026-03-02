@@ -272,8 +272,7 @@ func (h *RequestResetAccountHandler) ServeHTTP(w http.ResponseWriter, r *http.Re
 		return
 	}
 	res := &RequsetResetAccountResponse{
-		Url:   url,
-		Token: tokenString,
+		Url: url,
 	}
 	WriteJSON(w, res)
 }
@@ -290,8 +289,45 @@ func (h *ResetAccountHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	email, _, _ := ParseToken(token)
-	// fmt.Println(fmt.Sprintf(ReadHTMLFile("reset.html"), email, val))
-	// WriteJSON(w, fmt.Sprintf("%s - %s %s", email, name, surname))
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	fmt.Fprintf(w, ReadHTMLFile("reset.html"), email, val)
+}
+
+func (h *AccountResetter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		MethodNotAllowed(w)
+		return
+	}
+	formValues := map[string]string{
+		"new_pass": r.FormValue("new_password"),
+		"token":    r.FormValue("token"),
+	}
+
+	token, err := VerifyToken(formValues["token"])
+	if err != nil {
+		http.Redirect(w, r, "/auth/account/reset/error", http.StatusPermanentRedirect)
+		return
+	}
+	email, _, _ := ParseToken(token)
+	if email == "" {
+		http.Redirect(w, r, "/auth/account/reset/error", http.StatusPermanentRedirect)
+		return
+	}
+
+	user := s.GetUserWithEmail(email)
+	if user == nil {
+		http.Redirect(w, r, "/auth/account/reset/error", http.StatusPermanentRedirect)
+		return
+	}
+	err = s.UpdateAccountPassword(user.Email, encryptPassword(formValues["new_pass"]))
+	if err != nil {
+		http.Redirect(w, r, "/auth/account/reset/error", http.StatusPermanentRedirect)
+		return
+	}
+	err = s.SignOutUserAll(user.Email)
+	if err != nil {
+		http.Redirect(w, r, "/auth/account/reset/error", http.StatusPermanentRedirect)
+		return
+	}
+	http.Redirect(w, r, "/auth/account/reset/success", http.StatusPermanentRedirect)
 }

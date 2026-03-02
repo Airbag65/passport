@@ -23,6 +23,8 @@ type Storage interface {
 	RemovePassword(int, string) error
 	Migrate()
 	EditPassword(int, string, string) error
+	UpdateAccountPassword(string, string) error
+	SignOutUserAll(string) error
 }
 
 type LocalStorage struct {
@@ -313,5 +315,52 @@ func (s *LocalStorage) EditPassword(userId int, hostname, newPassword string) er
 		return err
 	}
 	_, err = statement.Exec(newPassword, userId, hostname)
+	return err
+}
+
+func (s *LocalStorage) UpdateAccountPassword(email, newPassword string) error {
+	updateAccountQuery := `UPDATE user
+		SET password = ?
+		WHERE email = ?;`
+	log.Printf("Updating account password for '%s'", email)
+	statement, err := s.db.Prepare(updateAccountQuery)
+	if err != nil {
+		log.Fatalf("Could not update account password for '%s'", email)
+		return err
+	}
+	_, err = statement.Exec(newPassword, email)
+	return err
+}
+
+func (s *LocalStorage) SignOutUserAll(email string) error {
+	user := s.GetUserWithEmail(email)
+	if user == nil {
+		return fmt.Errorf("Could not get user with email - SignOutUserAll")
+	}
+	if user.AuthToken == "" {
+		// Nothting to do
+		return nil
+	}
+	removeDeviceAuthQuery := `DELETE FROM auth_key
+	WHERE user_token = ?;`
+	deviceStmt, err := s.db.Prepare(removeDeviceAuthQuery)
+	if err != nil {
+		log.Fatalf("Could not remove device auth for '%s'", email)
+		return err
+	}
+	_, err = deviceStmt.Exec(user.AuthToken)
+	if err != nil {
+		return err
+	}
+	userAuthQuery := `UPDATE user
+	SET auth_token = ?,
+	logged_in_count = 0
+	WHERE email = ?;`
+	userStmt, err := s.db.Prepare(userAuthQuery)
+	if err != nil {
+		log.Fatalf("Could not remove user auth for '%s'", email)
+		return err
+	}
+	_, err = userStmt.Exec("", email)
 	return err
 }

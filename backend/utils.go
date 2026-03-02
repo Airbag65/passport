@@ -58,7 +58,8 @@ func SendResetEmail(url, email, name, surname string) error {
 	auth := smtp.PlainAuth("", GetSMTPUsername(), GetSMTPPassword(), "smtp.gmail.com")
 
 	to := []string{email}
-	msg := []byte("From: \"PASSPORT\" <passport@noreply.com>\r\n" +
+	msg := []byte("Content-Type: text/plain; charset=utf-8\r\n" +
+		"From: \"PASSPORT\" <noreply@passport.com>\r\n" +
 		fmt.Sprintf("To: \"%s %s\" <%s>\r\n", name, surname, email) +
 		"Subject: [PASSPORT] Account reset was requested\r\n" +
 		fmt.Sprintf("Hello %s %s,\r\nYou have requested to reset the master password for your PASSPORT account. You can do so via this link: %s \r\n\r\nPASSPORT wishes you a great day!",

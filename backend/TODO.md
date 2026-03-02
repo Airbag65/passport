@@ -11,7 +11,7 @@
 - [x] Generate JWT token and verify it to get data
 - [x] Send email with link to reset at
 - [x] From on website sending data to endpoint
-- [ ] Handle data in endpoint
-- [ ] Set new password in DB
-- [ ] Sign out all devices
-- [ ] `(all_good ? redirect to success.html : redirect to error.html)`
+- [x] Handle data in endpoint
+- [x] Set new password in DB
+- [x] Sign out all devices
+- [x] `(all_good ? redirect to success.html : redirect to error.html)`

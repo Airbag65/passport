@@ -76,13 +76,15 @@ func main() {
 		handler := ResetAccountHandler{}
 		handler.ServeHTTP(w, r)
 	})
-	server.HandleFunc("/auth/account/reset", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			MethodNotAllowed(w)
-			return
-		}
-		params := GetQueryParams(r.URL)
-		WriteJSON(w, params)
+	server.Handle("/auth/account/reset", &AccountResetter{})
+	server.HandleFunc("/auth/account/reset/success", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, ReadHTMLFile("success.html"))
+	})
+
+	server.HandleFunc("/auth/account/reset/error", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, ReadHTMLFile("error.html"))
 	})
 
 	// PWD handlers
