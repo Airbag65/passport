@@ -64,6 +64,8 @@ func main() {
 
 	// Auth handlers
 	server.Handle("/", &HomeHandler{})
+	server.Handle("/status", &StatusHandler{})
+
 	server.Handle("/auth/login", &LoginHandler{})
 	server.Handle("/auth/valid", &ValidateTokenHandler{})
 	server.Handle("/auth/signOut", &SignOutHandler{})

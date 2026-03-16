@@ -2,6 +2,13 @@ package main
 
 type HomeHandler struct{}
 
+type StatusHandler struct{}
+
+type StatusResponse struct {
+	Health          string `json:"health"`
+	RustportVersion string `json:"rustport_version"`
+}
+
 /*
 --- LOGIN ---
 */

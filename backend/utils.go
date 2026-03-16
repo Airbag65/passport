@@ -32,6 +32,14 @@ func GetSMTPUsername() string {
 	return smtpPass
 }
 
+func GetRustportVersion() string {
+	if err := godotenv.Load(".env"); err != nil {
+		return ""
+	}
+	version := os.Getenv("RUSTPORT_VERSION")
+	return version
+}
+
 func GetLocalIP() string {
 	conn, err := net.Dial("udp", "8.8.8.8:88")
 	if err != nil {

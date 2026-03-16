@@ -15,6 +15,15 @@ func (h *HomeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("OK!\n"))
 }
 
+func (h *StatusHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	version := GetRustportVersion()
+	if version == "" {
+		InternalServerError(w)
+		return
+	}
+	WriteJSON(w, &StatusResponse{Health: "OK!", RustportVersion: version})
+}
+
 func (l *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		MethodNotAllowed(w)
