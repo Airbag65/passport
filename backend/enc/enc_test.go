@@ -30,7 +30,7 @@ func TestEncrypt(t *testing.T) {
 	if err != nil {
 		t.Error("Could not generate keys")
 	}
-	
+
 	_, err = enc.Encrypt("Super secret message", public)
 	if err != nil {
 		t.Error("Error while encrypting")
@@ -45,7 +45,7 @@ func TestDecrypt(t *testing.T) {
 	message := "super secret message"
 
 	encMsg, _ := enc.Encrypt(message, public)
-	decMsg, err := enc.Decrypt(encMsg, private)
+	decMsg, err := enc.Decrypt(string(encMsg), private)
 	if err != nil {
 		t.Error("Error while decrypting")
 	}
