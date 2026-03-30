@@ -17,6 +17,21 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
+type AuthportLoginRequest struct {
+	Email            string `json:"email"`
+	Password         string `json:"password"`
+	ClientIdentifier string `json:"client_identifier"`
+	RemoteAddr       string `json:"remote_addr"`
+}
+
+type AuthportLoginResponse struct {
+	ResponseCode    int    `json:"response_code"`
+	ResponseMessage string `json:"response_message"`
+	Name            string `json:"name"`
+	Surname         string `json:"surname"`
+	AuthToken       string `json:"auth_token"`
+}
+
 type LoginResponse struct {
 	ResponseCode    int    `json:"response_code"`
 	ResponseMessage string `json:"response_message"`
@@ -36,6 +51,18 @@ type ValidateTokenHandler struct{}
 
 type ValidateTokenRequest struct {
 	AuthToken string `json:"auth_token"`
+	Email     string `json:"email"`
+}
+
+type AuthportValidateTokenRequest struct {
+	AuthToken string `json:"auth_token"`
+	Email     string `json:"email"`
+}
+
+type AuthportValidateTokenResponse struct {
+	Name    string `json:"name"`
+	Surname string `json:"surname"`
+	Email   string `json:"email"`
 }
 
 type ValidateTokenResponse struct {
@@ -55,6 +82,12 @@ type SignOutHandler struct{}
 
 type SignOutRequest struct {
 	Email string `json:"email"`
+}
+
+type AuthportSignoutRequest struct {
+	Email            string `json:"email"`
+	ClientIdentifier string `json:"client_identifier"`
+	IpAddr           string `json:"ip_addr"`
 }
 
 type SignOutResponse struct {

@@ -2,12 +2,12 @@ package main
 
 import (
 	"SH-password-manager/enc"
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
-
-	"github.com/google/uuid"
 )
 
 func (h *HomeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -43,20 +43,53 @@ func (l *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userInformation := s.GetUserWithEmail(request.Email)
-	if userInformation == nil {
-		NotFound(w)
+	authportReqObj := &AuthportLoginRequest{
+		Email:            request.Email,
+		Password:         encryptPassword(request.Password),
+		ClientIdentifier: "cli",
+		RemoteAddr:       GetRequestIP(r),
+	}
+
+	authportReqBody, err := json.Marshal(authportReqObj)
+	if err != nil {
+		InternalServerError(w)
 		return
 	}
 
-	// if userInformation.AuthToken != "" {
-	// 	w.WriteHeader(418)
-	// 	w.Write([]byte("Already signed in"))
-	// 	return
-	// }
-
-	if encryptPassword(request.Password) != userInformation.Password {
+	authportReq, err := http.NewRequest("POST", "http://127.0.0.1:8000/login", bytes.NewBuffer(authportReqBody))
+	if err != nil {
+		InternalServerError(w)
+		return
+	}
+	authportReq.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	response, err := client.Do(authportReq)
+	if err != nil {
+		InternalServerError(w)
+		return
+	}
+	switch response.StatusCode {
+	case 401:
 		Unauthorized(w)
+		return
+	case 404:
+		NotFound(w)
+		return
+	case 418:
+		w.WriteHeader(418)
+		w.Write([]byte("Already logged in"))
+		return
+	}
+	buffer, err := io.ReadAll(response.Body)
+	if err != nil {
+		InternalServerError(w)
+		return
+	}
+
+	var authportResponse AuthportLoginResponse
+
+	if err = json.Unmarshal(buffer, &authportResponse); err != nil {
+		InternalServerError(w)
 		return
 	}
 
@@ -70,29 +103,12 @@ func (l *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	loginResponse := &LoginResponse{
 		ResponseCode:    200,
 		ResponseMessage: "OK",
-		AuthToken:       "",
-		Name:            userInformation.Name,
-		Surname:         userInformation.Surname,
-		Email:           userInformation.Email,
+		AuthToken:       authportResponse.AuthToken,
+		Name:            authportResponse.Name,
+		Surname:         authportResponse.Surname,
+		Email:           request.Email,
 		PemString:       pemString,
 	}
-	newUserToken := fmt.Sprintf("%s%s", uuid.New().String(), uuid.New().String())
-	newClientToken := fmt.Sprintf("%s%s", uuid.New().String(), uuid.New().String())
-	ipAddr := GetRequestIP(r)
-	responseToken := newUserToken + "+" + newClientToken
-
-	if userInformation.LoggedInCount == 0 {
-		s.SetNewAuthToken(request.Email, newUserToken, newClientToken, ipAddr)
-	} else {
-		tok, err := s.SetClientAuthToken(request.Email, newClientToken, ipAddr)
-		if err != nil {
-			InternalServerError(w)
-			return
-		}
-		responseToken = tok
-	}
-
-	loginResponse.AuthToken = responseToken
 
 	WriteJSON(w, loginResponse)
 }
@@ -121,15 +137,36 @@ func (v *ValidateTokenHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	userInformation := s.GetUserWithAuthToken(request.AuthToken)
-	if userInformation == nil {
-		Unauthorized(w)
+	authportReqBody, err := json.Marshal(request)
+	if err != nil {
+		InternalServerError(w)
 		return
 	}
 
-	valid := s.ValidateToken(request.AuthToken, GetRequestIP(r), userInformation.Email)
-	if !valid {
-		Unauthorized(w)
+	authportReq, err := http.NewRequest("POST", "http://127.0.0.1:8000/valid", bytes.NewBuffer(authportReqBody))
+	if err != nil {
+		InternalServerError(w)
+		return
+	}
+
+	authportReq.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	response, err := client.Do(authportReq)
+	if err != nil {
+		InternalServerError(w)
+		return
+	}
+
+	buffer, err := io.ReadAll(response.Body)
+	if err != nil {
+		InternalServerError(w)
+		return
+	}
+
+	var authportResponse AuthportValidateTokenResponse
+
+	if err = json.Unmarshal(buffer, &authportResponse); err != nil {
+		InternalServerError(w)
 		return
 	}
 
@@ -142,9 +179,9 @@ func (v *ValidateTokenHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	tokenResponse := &ValidateTokenResponse{
 		ResponseCode:    200,
 		ResponseMessage: "OK",
-		Name:            userInformation.Name,
-		Surname:         userInformation.Surname,
-		Email:           userInformation.Email,
+		Name:            authportResponse.Name,
+		Surname:         authportResponse.Surname,
+		Email:           authportResponse.Email,
 		PemString:       pemString,
 	}
 	WriteJSON(w, tokenResponse)
@@ -169,19 +206,35 @@ func (h *SignOutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := s.GetUserWithEmail(request.Email)
-	if user == nil {
-		NotFound(w)
+	authportReqObj := &AuthportSignoutRequest{
+		Email:            request.Email,
+		IpAddr:           GetRequestIP(r),
+		ClientIdentifier: "cli",
+	}
+	authportReqBody, err := json.Marshal(authportReqObj)
+	if err != nil {
+		InternalServerError(w)
 		return
 	}
 
-	if user.AuthToken == "" {
+	authportReq, err := http.NewRequest("PUT", "http://127.0.0.1:8000/signOut", bytes.NewBuffer(authportReqBody))
+	if err != nil {
+		InternalServerError(w)
+		return
+	}
+	authportReq.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	response, err := client.Do(authportReq)
+
+	switch response.StatusCode {
+	case 304:
 		w.WriteHeader(304)
 		w.Write([]byte("Not modified"))
 		return
+	case 404:
+		NotFound(w)
+		return
 	}
-
-	s.RemoveAuthToken(request.Email, GetRequestIP(r))
 
 	WriteJSON(w, SignOutResponse{
 		ResponseCode:    200,
@@ -208,10 +261,66 @@ func (c *CreateNewUserHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	existingUser := s.GetUserWithEmail(request.Email)
-	if existingUser != nil {
+	request.Password = encryptPassword(request.Password)
+
+	authportReqBody, err := json.Marshal(request)
+	if err != nil {
+		InternalServerError(w)
+		return
+	}
+
+	client := &http.Client{}
+	authportReq, err := http.NewRequest("POST", "http://127.0.0.1:8000/new", bytes.NewBuffer(authportReqBody))
+	if err != nil {
+		InternalServerError(w)
+		return
+	}
+
+	authportReq.Header.Set("Content-Type", "application/json")
+	response, err := client.Do(authportReq)
+	if response.StatusCode == 418 {
 		w.WriteHeader(418)
 		w.Write([]byte("User already exists"))
+		return
+	} else if response.StatusCode != 200 {
+		InternalServerError(w)
+		return
+	}
+
+	authportLoginReqObj := &AuthportLoginRequest{
+		Email:            request.Email,
+		Password:         request.Password,
+		ClientIdentifier: "cli",
+		RemoteAddr:       GetRequestIP(r),
+	}
+
+	authportLoginReqBody, err := json.Marshal(authportLoginReqObj)
+	if err != nil {
+		InternalServerError(w)
+		return
+	}
+
+	authportReq, err = http.NewRequest("POST", "http://127.0.0.1:8000/login", bytes.NewBuffer(authportLoginReqBody))
+	authportReq.Header.Set("Content-Type", "application/json")
+	response, err = client.Do(authportReq)
+	if err != nil {
+		InternalServerError(w)
+		return
+	}
+
+	switch response.StatusCode {
+	case 404:
+		NotFound(w)
+		return
+	case 401:
+		Unauthorized(w)
+		return
+	case 418:
+		w.WriteHeader(418)
+		w.Write([]byte("Already logged in"))
+		return
+	case 500:
+		InternalServerError(w)
 		return
 	}
 
@@ -221,24 +330,26 @@ func (c *CreateNewUserHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	encPwd := encryptPassword(request.Password)
+	var loginRes AuthportLoginResponse
 
-	s.CreateNewUser(request.Email, encPwd, request.Name, request.Surname)
+	buffer, err := io.ReadAll(response.Body)
+	if err != nil {
+		InternalServerError(w)
+		return
+	}
+	if err = json.Unmarshal(buffer, &loginRes); err != nil {
+		InternalServerError(w)
+		return
+	}
 
 	newUserResponse := &CreateNewUserResponse{
 		ResponseCode:    200,
 		ResponseMessage: "OK",
-		AuthToken:       "",
-		Name:            request.Name,
-		Surname:         request.Surname,
+		AuthToken:       loginRes.AuthToken,
+		Name:            loginRes.Name,
+		Surname:         loginRes.Surname,
 		PemString:       pemString,
 	}
-	newUserToken := fmt.Sprintf("%s%s", uuid.New().String(), uuid.New().String())
-	newClientToken := fmt.Sprintf("%s%s", uuid.New().String(), uuid.New().String())
-	ipAddr := GetRequestIP(r)
-	s.SetNewAuthToken(request.Email, newUserToken, newClientToken, ipAddr)
-	responseToken := newUserToken + "+" + newClientToken
-	newUserResponse.AuthToken = responseToken
 	WriteJSON(w, newUserResponse)
 }
 

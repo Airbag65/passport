@@ -2,9 +2,10 @@ package main
 
 import (
 	"SH-password-manager/db"
+	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
-	"strings"
 )
 
 func BadRequest(w http.ResponseWriter) {
@@ -45,17 +46,43 @@ func ValidateToken(w http.ResponseWriter, r *http.Request) *db.User {
 		return nil
 	}
 
-	bearer := strings.Split(tokenHeader, " ")[0]
-	if bearer != "Bearer" {
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", "http://127.0.0.1:8000/validate", &bytes.Buffer{})
+	if err != nil {
+		InternalServerError(w)
+		return nil
+	}
+	req.Header.Set("Authorization", tokenHeader)
+	response, err := client.Do(req)
+	if err != nil {
+		InternalServerError(w)
+		return nil
+	}
+
+	switch response.StatusCode {
+	case 401:
+		Unauthorized(w)
+		return nil
+	case 400:
 		BadRequest(w)
 		return nil
 	}
-	token := strings.Split(tokenHeader, " ")[1]
 
-	userInformation := s.GetUserWithAuthToken(token)
-	if userInformation == nil {
+	buffer, err := io.ReadAll(response.Body)
+	if err != nil {
+		InternalServerError(w)
+		return nil
+	}
+	var userInformation db.User
+
+	if err = json.Unmarshal(buffer, &userInformation); err != nil {
+		InternalServerError(w)
+		return nil
+	}
+
+	if &userInformation == nil {
 		Unauthorized(w)
 		return nil
 	}
-	return userInformation
+	return &userInformation
 }
